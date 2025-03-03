@@ -7,6 +7,8 @@
 #include <signal.h>
 #include <open62541/client.h>
 #include <open62541/client_config_default.h>
+#include <open62541/plugin/log_stdout.h>
+#include <open62541/client_highlevel.h>
 
 #define PORT 8000
 
@@ -36,6 +38,20 @@ int main()
         UA_Client_delete(client);
         return status;
     }
+    UA_LOG_INFO(UA_Log_Stdout, UA_LOGCATEGORY_CLIENT, "OPCUA server connected");
+
+    UA_Variant uaValue;
+    UA_Variant uaValue1;
+
+    UA_NodeId push = UA_NODEID_STRING(1, "Push");
+    UA_NodeId harvest = UA_NODEID_STRING(1, "Harvest");
+    UA_NodeId leftWheel = UA_NODEID_STRING(1, "Left Wheel");
+    UA_NodeId rightWheel = UA_NODEID_STRING(1, "Right Wheel");
+
+    UA_NodeId sportPush = UA_NODEID_STRING(1, "Sport Push");
+    UA_NodeId sportHarvest = UA_NODEID_STRING(1, "Sport Harvest");
+    UA_NodeId sportLeftWheel = UA_NODEID_STRING(1, "Sport Left Wheel");
+    UA_NodeId sportRightWheel = UA_NODEID_STRING(1, "Sport Left Wheel");
 
 
     //=============socket server================
@@ -98,6 +114,50 @@ int main()
         value = strtod(buffer, NULL);
         value1 = 1/3.3 * value;
 
+        //write value to OPCUA server
+        //write value to Left Wheel
+        UA_Variant_setScalar(&uaValue, &value, &UA_TYPES[UA_TYPES_DOUBLE]);
+        status = UA_Client_writeValueAttribute(client, leftWheel, &uaValue);
+        if (status != UA_STATUSCODE_GOOD)
+        {
+            UA_LOG_ERROR(UA_Log_Stdout, UA_LOGCATEGORY_CLIENT, "Failed to write the Left Wheel. StatusCode %s", UA_StatusCode_name(status));
+        }else
+        {
+            UA_LOG_INFO(UA_Log_Stdout, UA_LOGCATEGORY_CLIENT, "Value successfully written to the Left Wheel");
+        }
+
+        //write value to Right Wheel
+        status = UA_Client_writeValueAttribute(client, rightWheel, &uaValue);
+        if (status != UA_STATUSCODE_GOOD)
+        {
+            UA_LOG_ERROR(UA_Log_Stdout, UA_LOGCATEGORY_CLIENT, "Failed to write the Right Wheel, StatusCode %s", UA_StatusCode_name(status));
+        }else
+        {
+            UA_LOG_INFO(UA_Log_Stdout, UA_LOGCATEGORY_CLIENT, "Value successfully written to the Left Wheel");
+        }
+
+        //write value to Harvest
+        UA_Variant_setScalar(&uaValue1, &value1, &UA_TYPES[UA_TYPES_DOUBLE]);
+        status = UA_Client_writeValueAttribute(client, sportPush, &uaValue1);
+        if (status != UA_STATUSCODE_GOOD)
+        {
+
+        }
+
+        if (value == 0)
+        {
+
+        }
+
+        if (value > 0)
+        {
+
+        }
+
+        if (value < 0)
+        {
+
+        }
 
 
         //respond message
