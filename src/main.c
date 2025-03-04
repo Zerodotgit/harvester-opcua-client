@@ -12,18 +12,16 @@
 
 #define PORT 8000
 
-#define OPCUA_SERVER_SERVER_URL "opc.tcp://localhost:4840"
+#define OPCUA_SERVER_SERVER_URL "opc.tcp://192.168.31.144:4840"
 
 int keepRunning = 1;
 
 // signal handler
-void handleSignal(int sig)
-{
+void handleSignal(int sig) {
     keepRunning = 0;
 }
 
-int main()
-{
+int main() {
     //=============opcua client================
 
     //create opcua client
@@ -33,8 +31,7 @@ int main()
     //connect to opcua server
     printf("Connecting to OPCUA server\n");
     UA_StatusCode status = UA_Client_connect(client, OPCUA_SERVER_SERVER_URL);
-    if (status != UA_STATUSCODE_GOOD)
-    {
+    if (status != UA_STATUSCODE_GOOD) {
         UA_Client_delete(client);
         return status;
     }
@@ -48,12 +45,6 @@ int main()
     UA_NodeId leftWheel = UA_NODEID_STRING(1, "Left Wheel");
     UA_NodeId rightWheel = UA_NODEID_STRING(1, "Right Wheel");
 
-    UA_NodeId sportPush = UA_NODEID_STRING(1, "Sport Push");
-    UA_NodeId sportHarvest = UA_NODEID_STRING(1, "Sport Harvest");
-    UA_NodeId sportLeftWheel = UA_NODEID_STRING(1, "Sport Left Wheel");
-    UA_NodeId sportRightWheel = UA_NODEID_STRING(1, "Sport Left Wheel");
-
-
     //=============socket server================
     double value = 0;
     double value1 = 0;
@@ -61,13 +52,12 @@ int main()
     int server_fd, new_socket;
     struct sockaddr_in address;
     int addrLen = sizeof(address);
-    char buffer[1024] = {0};    //get message
-    const char *response = "1";  //answer message
+    char buffer[1024] = {0}; //get message
+    const char *response = "1"; //answer message
 
     //create socket
     printf("Creating socket...\n");
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
-    {
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
         perror("create socket failed");
         exit(EXIT_FAILURE);
     }
@@ -78,8 +68,7 @@ int main()
 
     //bind socket
     printf("Binding socket...\n");
-    if (bind(server_fd, (struct sockaddr *)&address, addrLen) < 0)
-    {
+    if (bind(server_fd, (struct sockaddr *) &address, addrLen) < 0) {
         perror("bind failed");
         exit(EXIT_FAILURE);
     }
@@ -87,8 +76,7 @@ int main()
 
     //listen connection
     printf("Listening...\n");
-    if (listen(server_fd, 3) < 0)
-    {
+    if (listen(server_fd, 3) < 0) {
         perror("listen failed");
         exit(EXIT_FAILURE);
     }
@@ -96,73 +84,59 @@ int main()
 
     //accept connection
     printf("Waiting for connection...\n");
-    if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrLen)) < 0)
-    {
+    if ((new_socket = accept(server_fd, (struct sockaddr *) &address, (socklen_t *) &addrLen)) < 0) {
         perror("accept failed");
         close(server_fd);
         exit(EXIT_FAILURE);
     }
     printf("Connected\n");
 
-    while (true)
-    {
+    while (true) {
         //read message
         read(new_socket, buffer, 1024);
         printf("Client:%s\n", buffer);
 
         //the value that will be sent to the OPCUA server
         value = strtod(buffer, NULL);
-        value1 = 1/3.3 * value;
+        value1 = 1 / 3.3 * value;
+
+        if (value < 0) {
+            value = -value;
+            value1 = -value1;
+        }
 
         //write value to OPCUA server
         //write value to Left Wheel
         UA_Variant_setScalar(&uaValue, &value, &UA_TYPES[UA_TYPES_DOUBLE]);
         status = UA_Client_writeValueAttribute(client, leftWheel, &uaValue);
-        if (status != UA_STATUSCODE_GOOD)
-        {
-            UA_LOG_ERROR(UA_Log_Stdout, UA_LOGCATEGORY_CLIENT, "Failed to write the Left Wheel. StatusCode %s", UA_StatusCode_name(status));
-        }else
-        {
+        if (status != UA_STATUSCODE_GOOD) {
+            UA_LOG_ERROR(UA_Log_Stdout, UA_LOGCATEGORY_CLIENT, "Failed to write the Left Wheel. StatusCode %s",
+                         UA_StatusCode_name(status));
+        } else {
             UA_LOG_INFO(UA_Log_Stdout, UA_LOGCATEGORY_CLIENT, "Value successfully written to the Left Wheel");
         }
 
         //write value to Right Wheel
         status = UA_Client_writeValueAttribute(client, rightWheel, &uaValue);
-        if (status != UA_STATUSCODE_GOOD)
-        {
-            UA_LOG_ERROR(UA_Log_Stdout, UA_LOGCATEGORY_CLIENT, "Failed to write the Right Wheel, StatusCode %s", UA_StatusCode_name(status));
-        }else
-        {
+        if (status != UA_STATUSCODE_GOOD) {
+            UA_LOG_ERROR(UA_Log_Stdout, UA_LOGCATEGORY_CLIENT, "Failed to write the Right Wheel, StatusCode %s",
+                         UA_StatusCode_name(status));
+        } else {
             UA_LOG_INFO(UA_Log_Stdout, UA_LOGCATEGORY_CLIENT, "Value successfully written to the Left Wheel");
         }
 
         //write value to Harvest
         UA_Variant_setScalar(&uaValue1, &value1, &UA_TYPES[UA_TYPES_DOUBLE]);
-        status = UA_Client_writeValueAttribute(client, sportPush, &uaValue1);
-        if (status != UA_STATUSCODE_GOOD)
-        {
-
+        status = UA_Client_writeValueAttribute(client, harvest, &uaValue1);
+        if (status != UA_STATUSCODE_GOOD) {
+            UA_LOG_ERROR(UA_Log_Stdout, UA_LOGCATEGORY_CLIENT, "Failed to write the Harvest. StatusCode %s",
+                         UA_StatusCode_name(status));
+        } else {
+            UA_LOG_INFO(UA_Log_Stdout, UA_LOGCATEGORY_CLIENT, "Value successfully written to the Harvest");
         }
-
-        if (value == 0)
-        {
-
-        }
-
-        if (value > 0)
-        {
-
-        }
-
-        if (value < 0)
-        {
-
-        }
-
 
         //respond message
-        if (send(new_socket, response, strlen(response), 0) < 0)
-        {
+        if (send(new_socket, response, strlen(response), 0) < 0) {
             perror("respond failed");
             close(new_socket);
             close(server_fd);
@@ -180,5 +154,4 @@ int main()
     printf("exited\n");
 
     return 0;
-
 }
