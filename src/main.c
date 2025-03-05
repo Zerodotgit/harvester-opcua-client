@@ -7,7 +7,7 @@
 #include "opcua_client.h"
 #include "socket_server.h"
 
-#define OPCUA_SERVER_URL "opc.tcp://127.0.0.1:4840"
+#define OPCUA_SERVER_URL "opc.tcp://192.168.31.144:4840"
 #define SOCKET_PORT 8000
 #define BUFFER_SIZE 1024
 
@@ -56,11 +56,13 @@ int main() {
         buffer[bytesRead] = '\0';
         printf("Client: %s\n", buffer);
 
-        value = strtod(buffer, NULL);
-        value1 = 1 / 3.3 * value;
+        value = -strtod(buffer, NULL);
+        value1 = -(1 / 3.3 * value);
 
-        if (value == 0)
+        if (value >= 0) {
+            value1 = 0;
             value2 = 0;
+        }
         else
             value2 = 300;
 
