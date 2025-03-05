@@ -7,7 +7,7 @@
 #include "opcua_client.h"
 #include "socket_server.h"
 
-#define OPCUA_SERVER_URL "opc.tcp://192.168.31.144:4840"
+#define OPCUA_SERVER_URL "opc.tcp://127.0.0.1:4840"
 #define SOCKET_PORT 8000
 #define BUFFER_SIZE 1024
 
@@ -48,7 +48,12 @@ int main() {
         const char *response = "Received";
 
         //read message from client
-        read(newSocket, buffer, BUFFER_SIZE);
+        ssize_t bytesRead = read(newSocket, buffer, BUFFER_SIZE - 1);
+        if (bytesRead < 0) {
+            perror("Failed to read from client:");
+            break;
+        }
+        buffer[bytesRead] = '\0';
         printf("Client: %s\n", buffer);
 
         value = strtod(buffer, NULL);
